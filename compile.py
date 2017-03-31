@@ -9,9 +9,19 @@ class Compiler(object):
 		self.keywords = self.populateKeyWords()
 		self.tokens = self.parseTokens(code_file)
 		self.stack = []
+		self.current_pos = -1
+
+	@property
+	def end(self):
+		return len(self.tokens)
+
+	def eof(self):
+		return self.end == (self.current_pos + 1)
 
 	def run(self):
-		for token in self.tokens:
+		while not self.eof():
+			# can't use a for loop since we may want to parse multiple words per loop (variable definitions)
+			token = self.next_token
 			if token in self.keywords:
 				self.keywords[token]()
 			else:
@@ -27,10 +37,22 @@ class Compiler(object):
 		except:
 			raise SyntaxError("Problem occured during execution of %s" % m.__name__)
 
+	@property
+	def next_token(self):
+		self.current_pos += 1
+		token = self.tokens[self.current_pos]
+		return token
+
+	def varFn(self):
+		# get the next word, define it as a keyword with value 0
+		token = self.next_token
+		self.keywords[token] = self.initialFn
+
+	def initialFn(self):
+		self.stack.append(0)
 
 	def printFn(self):
 		print self.stack.pop()
-
 
 	def plusFn(self):
 		self.stack.append(self.stack.pop() + self.stack.pop())
@@ -66,9 +88,12 @@ class Compiler(object):
 				 "over": self.overFn, # Copy 2OS to TOS
 				 "rotate": self.rotateFn, # Move 3OS to TOS
 				 }
+		Variable = {"var" : self.varFn,
+					}
 		keywords.update(Print)
 		keywords.update(Math)
 		keywords.update(Stack)
+		keywords.update(Variable)
 		return keywords
 
 	def parseTokens(self, code_file):
@@ -80,10 +105,6 @@ class Compiler(object):
 		return tokens.split()
 
 
-
 if __name__ == "__main__":
 	c = Compiler(sys.argv[1])
 	c.run()
-
-
-
