@@ -51,6 +51,17 @@ class Compiler(object):
 	def initialFn(self):
 		self.stack.append(0)
 
+	def storeFn(self):
+		def innerStore(v):
+			self.stack.append(v)
+		# Store value of 2OS into variable given by TOS
+		var = self.stack.pop() # FIXME this returns the variable's current value
+		val = self.stack.pop()
+		print 1, var
+		print 2, val
+		self.keywords[var] = lambda : innerstore(val)
+
+
 	def printFn(self):
 		print self.stack.pop()
 
@@ -70,7 +81,6 @@ class Compiler(object):
 	def overFn(self):
 		self.stack.append(stack[-2])
 
-
 	def rotateFn(self):
 		tos = self.stack.pop()
 		second = self.stack.pop()
@@ -89,6 +99,7 @@ class Compiler(object):
 				 "rotate": self.rotateFn, # Move 3OS to TOS
 				 }
 		Variable = {"var" : self.varFn,
+					"store" : self.storeFn,
 					}
 		keywords.update(Print)
 		keywords.update(Math)
