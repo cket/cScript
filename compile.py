@@ -52,15 +52,13 @@ class Compiler(object):
 		self.stack.append(0)
 
 	def storeFn(self):
-		def innerStore(v):
+		def innerstore(v):
 			self.stack.append(v)
-		# Store value of 2OS into variable given by TOS
-		var = self.stack.pop() # FIXME this returns the variable's current value
+		# value store variable
 		val = self.stack.pop()
-		print 1, var
-		print 2, val
-		self.keywords[var] = lambda : innerstore(val)
-
+		variable_name = self.next_token
+		assert variable_name in self.keywords # var must be initialized first
+		self.keywords[variable_name] = lambda : innerstore(val)
 
 	def printFn(self):
 		print self.stack.pop()
