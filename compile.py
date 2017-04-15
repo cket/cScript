@@ -24,6 +24,11 @@ class Compiler(object):
 			token = self.next_token
 			if token in self.keywords:
 				self.keywords[token]()
+			elif token.startswith('\"'):
+				# found a string
+				while not token.endswith('\"'):
+					token += self.next_token
+				self.stack.append(token)
 			else:
 				try:
 					token = float(token)
