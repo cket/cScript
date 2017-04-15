@@ -51,6 +51,15 @@ class Compiler(object):
 	def initialFn(self):
 		self.stack.append(0)
 
+	def storeFn(self):
+		def innerstore(v):
+			self.stack.append(v)
+		# value store variable
+		val = self.stack.pop()
+		variable_name = self.next_token
+		assert variable_name in self.keywords # var must be initialized first
+		self.keywords[variable_name] = lambda : innerstore(val)
+
 	def printFn(self):
 		print self.stack.pop()
 
@@ -70,7 +79,6 @@ class Compiler(object):
 	def overFn(self):
 		self.stack.append(stack[-2])
 
-
 	def rotateFn(self):
 		tos = self.stack.pop()
 		second = self.stack.pop()
@@ -89,6 +97,7 @@ class Compiler(object):
 				 "rotate": self.rotateFn, # Move 3OS to TOS
 				 }
 		Variable = {"var" : self.varFn,
+					"store" : self.storeFn,
 					}
 		keywords.update(Print)
 		keywords.update(Math)
