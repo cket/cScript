@@ -4,6 +4,17 @@ import sys
 class SyntaxError(RuntimeError):
 	pass
 
+class String(object):
+	pass
+
+class Number(object):
+	pass
+
+class Keyword(object):
+	pass
+
+types = [String, Number, Keyword]
+
 class Compiler(object):
 	def __init__(self, code_file):
 		self.keywords = self.populateKeyWords()
@@ -21,20 +32,11 @@ class Compiler(object):
 	def run(self):
 		while not self.eof():
 			# can't use a for loop since we may want to parse multiple words per loop (variable definitions)
-			token = self.next_token
-			if token in self.keywords:
+			t, token = self.next_token
+			if t is Keyword:
 				self.keywords[token]()
-			elif token.startswith('\"'):
-				# found a string
-				while not token.endswith('\"'):
-					token += self.next_token
-				self.stack.append(token)
 			else:
-				try:
-					token = float(token)
-					self.stack.append(token)
-				except ValueError:
-					raise SyntaxError(token)
+				self.stack.append(token)
 
 	def synWrapper(self, m):
 		try:
@@ -44,13 +46,62 @@ class Compiler(object):
 
 	@property
 	def next_token(self):
-		self.current_pos += 1
-		token = self.tokens[self.current_pos]
-		return token
+		def _nextWord():
+			pointer = 0
+			builder = ''
+			while pointer < len(self.tokens) and not self.tokens[pointer].isspace():
+				builder += self.tokens[pointer]
+				pointer += 1
+			self.tokens = self.tokens[pointer:]
+			return builder
+
+		def _nextString():
+			# we know first char is " - skip it
+			pointer = 1
+			builder = '\"'
+			while pointer < len(self.tokens) and self.tokens[pointer] != '\"':
+				builder += self.tokens[pointer]
+				pointer += 1
+			builder += self.tokens[pointer]
+			self.tokens = self.tokens[pointer + 1:]
+			return builder
+
+		def _removeWhiteSpace():
+			pointer = 0
+			while pointer < len(self.tokens) and self.tokens[pointer].isspace():
+				pointer += 1
+			self.tokens = self.tokens[pointer:]
+
+		_removeWhiteSpace()
+		t_type = None
+		try:
+			tokenChar = self.tokens[0]
+		except IndexError:
+			exit(0)
+
+		if tokenChar == '\"':
+			# found a string
+			t_type = String
+			token = _nextString()
+		else:
+			token = _nextWord()
+
+		if t_type is not None:
+			pass
+		elif token in self.keywords:
+			t_type = Keyword
+		else:
+			try:
+				token = float(token)
+			except ValueError:
+				t_type = None
+			else:
+				t_type = Number
+		return t_type, token
 
 	def varFn(self):
 		# get the next word, define it as a keyword with value 0
-		token = self.next_token
+		_, token = self.next_token
 		self.keywords[token] = self.initialFn
 
 	def initialFn(self):
@@ -61,7 +112,7 @@ class Compiler(object):
 			self.stack.append(v)
 		# value store variable
 		val = self.stack.pop()
-		variable_name = self.next_token
+		t, variable_name = self.next_token
 		assert variable_name in self.keywords # var must be initialized first
 		self.keywords[variable_name] = lambda : innerstore(val)
 
@@ -103,6 +154,7 @@ class Compiler(object):
 				 }
 		Variable = {"var" : self.varFn,
 					"store" : self.storeFn,
+					#"assert" : self.assertFn,
 					}
 		keywords.update(Print)
 		keywords.update(Math)
@@ -116,7 +168,7 @@ class Compiler(object):
 
 		with open(code_file) as f:
 			tokens = f.read()
-		return tokens.split()
+		return tokens
 
 
 if __name__ == "__main__":
