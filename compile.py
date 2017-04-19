@@ -104,12 +104,22 @@ class Compiler(object):
 		_, token = self.next_token
 		self.keywords[token] = self.initialFn
 
+	def assertFn(self):
+		# get the next word, ensure it equals last value on stack
+		_, token = self.next_token
+		val = self.stack.pop()
+		if _ is Keyword:
+			assert self.keywords[token]() == val
+		else:
+			assert token == val
+
 	def initialFn(self):
 		self.stack.append(0)
 
 	def storeFn(self):
 		def innerstore(v):
 			self.stack.append(v)
+			return v
 		# value store variable
 		val = self.stack.pop()
 		t, variable_name = self.next_token
@@ -154,7 +164,7 @@ class Compiler(object):
 				 }
 		Variable = {"var" : self.varFn,
 					"store" : self.storeFn,
-					#"assert" : self.assertFn,
+					"assert" : self.assertFn,
 					}
 		keywords.update(Print)
 		keywords.update(Math)
